@@ -30,35 +30,21 @@ jobs:
           name: cicdsample
           path: build/libs/*.jar
 
-      - name: Copy jar file to remote
-        uses: appleboy/scp-action@master
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
         with:
-          username: ${{ secrets.USER }}
-          host: ${{ secrets.SEVER_IP }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./build/libs/*.jar"
-          target: "/home/ec2-user/cicd"
-          strip_components: 2
-
-      - name: Copy deploy script file to remote
-        uses: appleboy/scp-action@master
+          name: cicdsample
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.4
         with:
-          username: ${{ secrets.USER }}
-          host: ${{ secrets.SEVER_IP }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "deploy.sh"
-          target: "/home/ec2-user/cicd"
-
-      - name: Execute deploy script
-        uses: appleboy/ssh-action@master
-        with:
-          username: ${{ secrets.USER }}
-          host: ${{ secrets.SEVER_IP }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
-          script: |
-            JAR_PATH="/home/ec2-user/cicd/*.jar"
-            echo "jar path : $JAR_PATH"
-            chmod +x $JAR_PATH
-            nohup java -jar $JAR_PATH > /dev/null 2> /dev/null < /dev/null &
-            echo "jar file deploy success"
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: SCP transfer
+        run: scp *.jar ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/cicd
+      - name: Execute remote commands
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "sudo fuser -k 8080/tcp"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "sudo nohup java -jar ~/cicd/*.jar &" 
