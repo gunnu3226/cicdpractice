@@ -43,7 +43,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: SCP transfer
-        run: scp cicdpractice-0.0.1-SNAPSHOT.jar ubuntu@${{ secrets.SERVER_IP }}:~/cicd
+        run: scp cicdpractice-0.0.1-SNAPSHOT.jar ubuntu@${{ secrets.SEVER_IP }}:~/cicd
       - name: Execute remote commands
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "sudo fuser -k 8080/tcp"
